@@ -1,91 +1,103 @@
-import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.InputMismatchException;
 import java.util.Random;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.*;
 
 public class Main {
-    private static Random random = new Random();
-
+    private JFrame frame;
+    private JPanel panel;
+    private JLabel label;
+    private JTextField textField;
+    private JButton button;
+    private int randomNumber;
+    private int remainingGuesses;
+    
     public static void main(String[] args) {
-        SwingGUI gui = new SwingGUI();
-        gui.createAndShowGUI();
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new Main().createAndShowGUI();
+            }
+        });
     }
 
-    public static class SwingGUI {
-        private JFrame frame;
-        private JTextField inputField;
-        private JLabel messageLabel;
-        private int randomNumber;
-
-        public void createAndShowGUI() {
-            frame = new JFrame("Number Guessing Game");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-            JPanel mainPanel = new JPanel();
-            mainPanel.setLayout(new BorderLayout());
-
-            messageLabel = new JLabel("Enter a number FROM 1 to 10:");
-            mainPanel.add(messageLabel, BorderLayout.NORTH);
-
-            inputField = new JTextField(10);
-            mainPanel.add(inputField, BorderLayout.CENTER);
-
-            JButton submitButton = new JButton("Submit");
-            submitButton.addActionListener(new SubmitButtonListener());
-            mainPanel.add(submitButton, BorderLayout.SOUTH);
-
-            frame.getContentPane().add(mainPanel);
-            frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-
-            startGame();
-        }
-
-        private void startGame() {
-            randomNumber = random.nextInt(10) + 1;
-            inputField.setText("");
-            inputField.requestFocus();
-        }
-
-        private class SubmitButtonListener implements ActionListener {
-            @Override
+    private void createAndShowGUI() {
+        frame = new JFrame("Number Guessing Game");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.insets = new Insets(10, 10, 10, 10);
+        
+        label = new JLabel("Enter a number FROM 1 to 100:");
+        panel.add(label, constraints);
+        
+        constraints.gridy = 1;
+        textField = new JTextField(10);
+        panel.add(textField, constraints);
+        
+        constraints.gridy = 2;
+        button = new JButton("Guess");
+        button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                try {
-                    int inputNumber = Integer.parseInt(inputField.getText());
-                    if (inputNumber >= 1 && inputNumber <= 10) {
-                        checkNumber(inputNumber);
-                    } else {
-                        JOptionPane.showMessageDialog(frame, "Enter a number FROM 1 to 10!");
-                    }
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame, "Enter a valid integer number!");
-                }
+                handleGuess();
             }
-        }
+        });
+        panel.add(button, constraints);
+        
+        frame.getContentPane().add(panel);
+        frame.pack();
+        frame.setVisible(true);
+        
+        generateRandomNumber();
+        remainingGuesses = 5;
+    }
 
-        private void checkNumber(int inputNumber) {
-            if (inputNumber == randomNumber) {
-                JOptionPane.showMessageDialog(frame, "HURRAY!! YOU FOUND THE NUMBER\n:)");
-                int choice = JOptionPane.showConfirmDialog(frame, "Do you want to play again?", "Game Over",
-                        JOptionPane.YES_NO_OPTION);
-                if (choice == JOptionPane.YES_OPTION) {
-                    startGame();
+    private void generateRandomNumber() {
+        Random number = new Random();
+        randomNumber = number.nextInt(100) + 1;
+    }
+    
+    private void handleGuess() {
+        try {
+            int inputNumber = Integer.parseInt(textField.getText());
+            if (inputNumber >= 1 && inputNumber <= 100) {
+                remainingGuesses--;
+                if (randomNumber == inputNumber) {
+                    showResultDialog("HURRAY!! YOU FOUND THE NUMBER", "Congratulations");
+                    resetGame();
+                } else if (remainingGuesses > 0) {
+                    String message = "OOPS! NOT THAT ONE! Remaining Guesses: " + remainingGuesses;
+                    showResultDialog(message, "Wrong Guess");
                 } else {
-                    frame.dispose();
+                    String message = "Sorry, you ran out of guesses! The number was: " + randomNumber;
+                    showResultDialog(message, "Game Over");
+                    resetGame();
                 }
             } else {
-                JOptionPane.showMessageDialog(frame, "OOPS! NOT THAT ONE! Try again.");
-                inputField.setText("");
-                inputField.requestFocus();
+                showInvalidInputDialog("Enter a number FROM 1 to 100", "Invalid Input");
             }
+        } catch (NumberFormatException ex) {
+            showInvalidInputDialog("Enter a valid integer number", "Invalid Input");
         }
+        
+        textField.setText("");
+    }
+    
+    private void resetGame() {
+        remainingGuesses = 5;
+        generateRandomNumber();
+    }
+    
+    private void showResultDialog(String message, String title) {
+        JOptionPane.showMessageDialog(frame, message, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void showInvalidInputDialog(String message, String title) {
+        JOptionPane.showMessageDialog(frame, message, title, JOptionPane.ERROR_MESSAGE);
     }
 }
